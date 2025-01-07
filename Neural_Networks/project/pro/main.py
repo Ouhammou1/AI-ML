@@ -58,7 +58,30 @@ def main():
         gate = input("Enter the gate type: ").strip().upper()
 
         if gate == "EXIT":
-  
+            print("Exiting the program. Goodbye!")
+            break
+
+        try:
+            X, y = create_dataset(gate)
+        except ValueError as e:
+            print(e)
+            continue
+
+        print(f"\nTraining Adaline model for {gate} gate...")
+
+        # Train the Adaline model
+        model = Adaline(learning_rate=0.1, epochs=1000)
+        model.fit(X, y)
+
+        # Predict using the model
+        predictions = model.predict(X)
+
+        # Display the truth table and graph in the same figure
+        display_table_and_graph(gate, X, y, predictions, model)
+
+
+if __name__ == "__main__":
+    main()
 
 
 # from adaline import Adaline           
@@ -97,4 +120,4 @@ def main():
 
 
 # if __name__ == "__main__":
-#     main()
+#     main()    pass
