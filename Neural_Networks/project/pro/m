@@ -1,0 +1,162 @@
+import numpy as np
+
+class Adaline:
+    def __init__(self, learning_rate=0.01, epochs=1000):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.weights = None
+        self.bias = None
+
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.weights = np.zeros(n_features)
+        self.bias = 0
+
+        for _ in range(self.epochs):
+            for i, x in enumerate(X):
+                linear_output = np.dot(x, self.weights) + self.bias
+                error = y[i] - linear_output
+                self.weights += self.learning_rate * error * x
+                self.bias += self.learning_rate * error
+
+    def predict(self, X):
+        linear_output = np.dot(X, self.weights) + self.bias
+        return (linear_output >= 0.5).astype(int)
+import numpy as np
+
+class Madaline:
+    def __init__(self, n_neurons=2, learning_rate=0.1, epochs=1000, gate_type="XOR"):
+        self.weights = []
+        self.biases = []
+        self.n_neurons = n_neurons
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.gate_type = gate_type
+
+    def fit(self, X, y):
+        n_features = X.shape[1]
+        self.weights = np.random.uniform(-1, 1, size=(self.n_neurons, n_features))
+        self.biases = np.random.uniform(-1, 1, size=self.n_neurons)
+
+        for _ in range(self.epochs):
+            for i, x in enumerate(X):
+                neuron_outputs = np.dot(self.weights, x) + self.biases
+                neuron_activations = (neuron_outputs >= 0).astype(int)
+
+                if self.gate_type == "XOR":
+                    predicted_output = (neuron_activations[0] ^ neuron_activations[1]).astype(int)
+                elif self.gate_type == "XNOR":
+                    predicted_output = (neuron_activations[0] == neuron_activations[1]).astype(int)
+                else:
+                    raise ValueError("Invalid gate type for Madaline")
+
+                error = y[i] - predicted_output
+                if error != 0:
+                    for j in range(self.n_neurons):
+                        self.weights[j] += self.learning_rate * error * x
+                        self.biases[j] += self.learning_rate * error
+
+    def predict(self, X):
+        neuron_outputs = np.dot(X, self.weights.T) + self.biases
+        neuron_activations = (neuron_outputs >= 0).astype(int)
+
+        if self.gate_type == "XOR":
+            return (neuron_activations[:, 0] ^ neuron_activations[:, 1]).astype(int)
+        elif self.gate_type == "XNOR":
+            return (neuron_activations[:, 0] == neuron_activations[:, 1]).astype(int)
+        else:
+            raise ValueError("Invalid gate type for Madaline")
+from adaline import Adaline
+from madaline import Madaline
+from utils import create_dataset
+from plot_utils import plot_combined
+
+
+def main():
+    print("\nWelcome to the Logic Gate Simulator!")
+    print("Available gates: AND, OR, XOR, NOR, XNOR, NAND")
+    print("Type 'EXIT' to quit the program.")
+
+    while True:
+        gate = input("\nEnter the gate type: ").strip().upper()
+        if gate == "EXIT":
+            print("\nExiting the program. Goodbye!")
+            break
+
+        try:
+            X, y = create_dataset(gate)
+        except ValueError as e:
+            print(e)
+            continue
+
+        print(f"\nTraining model for {gate} gate...")
+
+        if gate in ["XOR", "XNOR"]:
+            model = Madaline(n_neurons=2, gate_type=gate)
+        else:
+            model = Adaline(learning_rate=0.1, epochs=1000)
+
+        model.fit(X, y)
+        predictions = model.predict(X)
+        plot_combined(gate, X, y, predictions, model)
+
+
+if __name__ == "__main__":
+    main()
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_combined(gate_type, X, y, predictions, model):
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+    table_data = {
+        "Input A": X[:, 0],
+        "Input B": X[:, 1],
+        "True Output": y,
+        "Predicted Output": predictions,
+    }
+    df = pd.DataFrame(table_data)
+    axs[0].axis("tight")
+    axs[0].axis("off")
+    axs[0].table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+    axs[0].set_title(f"Truth Table for {gate_type} Gate", fontsize=12, pad=20)
+
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                         np.arange(y_min, y_max, 0.1))
+    grid = np.c_[xx.ravel(), yy.ravel()]
+    boundary_predictions = model.predict(grid).reshape(xx.shape)
+
+    axs[1].contourf(xx, yy, boundary_predictions, alpha=0.8, cmap=plt.cm.Paired)
+    axs[1].scatter(X[:, 0], X[:, 1], c=y, edgecolor="k", cmap=plt.cm.Paired)
+    axs[1].set_title(f"Decision Boundary for {gate_type} Gate")
+    axs[1].set_xlabel("Input A")
+    axs[1].set_ylabel("Input B")
+
+    axs[2].axis("off")
+    try:
+        img = plt.imread(f"images/{gate_type}.png")
+        axs[2].imshow(img)
+        axs[2].set_title(f"{gate_type} Gate Image")
+    except FileNotFoundError:
+        axs[2].text(0.5, 0.5, "Image not found", fontsize=12, ha="center", va="center")
+        axs[2].set_title("No Image Available")
+
+    plt.tight_layout()
+    plt.show()
+import numpy as np
+
+def create_dataset(gate):
+    gates = {
+        "AND": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([0, 0, 0, 1])),
+        "OR": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([0, 1, 1, 1])),
+        "XOR": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([0, 1, 1, 0])),
+        "XNOR": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([1, 0, 0, 1])),
+        "NOR": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([1, 0, 0, 0])),
+        "NAND": (np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), np.array([1, 1, 1, 0])),
+    }
+    if gate not in gates:
+        raise ValueError(f"Invalid gate '{gate}'. Available gates: {', '.join(gates.keys())}")
+    return gates[gate]

@@ -11,7 +11,6 @@ def main():
 
     while True:
         gate = input("\nEnter the gate type: ").strip().upper()
-
         if gate == "EXIT":
             print("\nExiting the program. Goodbye!")
             break
