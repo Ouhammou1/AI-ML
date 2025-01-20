@@ -19,7 +19,7 @@ class Adaline:
             if mse < self.learning_rate:
                 print(f"Early stopping at epoch {epoch + 1}")
                 break
-            print(f"Epoch {epoch + 1}: MSE = {mse:.5f}, Weights Mean = {np.mean(self.weights):.5f}")
+            print(f"Epoch {epoch + 1}: Mean Error = {mse:.5f}, Weights Mean = {np.mean(self.weights):.5f}")
         return self
 
     def net_input(self, X):

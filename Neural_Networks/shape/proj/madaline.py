@@ -1,5 +1,5 @@
-import numpy as np
 from adaline import Adaline
+import numpy as np
 
 class Madaline:
     def __init__(self, n_adalines=3, learning_rate=0.00001, n_iterations=485):
